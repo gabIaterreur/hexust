@@ -11,45 +11,15 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Position, Rect},
     style::{Color, Style, Stylize},
     symbols::border,
-    text::{Line, Text},
+    text::{Line, Text, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend};
 
 
-
-pub fn hexdump(bytes: &Vec<u8>) -> String {
-    let mut out = String::new();
-    for (index, chunk) in bytes.chunks(16).enumerate() {
-        let offset = (index * 16) as u64;
-
-        write!(out, "{:08x} ", offset).unwrap();
-        for b in chunk {
-            write!(out, "{:02x} ", b).unwrap();
-        }
-
-        for b in chunk {
-            let c = if b.is_ascii_graphic() || *b == b' ' {
-                *b as char
-            } else {
-                '.'
-            };
-            write!(out, "{}", c).unwrap();
-        }
-
-        out.push('\n');
-    }
-    out
-}
-
-pub fn hexview(bytes: &Vec<u8>) -> String {
-    return String::from("Pane 2")
-}
-
 #[derive(Debug, Default)]
 pub struct Hexust {
-    hexdump: String,
-    hexview: String,
+    bytes: Vec<u8>,
 }
 
 impl Hexust {
@@ -75,11 +45,21 @@ impl Widget for &Hexust {
         let b2 = Block::bordered()
             .title(" Hexview ");
 
-        Paragraph::new(self.hexdump.as_str())
-            .centered()
-            .block(b1)
-            .render(l, buf);
-        Paragraph::new(self.hexview.as_str())
+
+        let mut colors: Vec<Line> = Vec::new();
+        for chunk in self.bytes.chunks(16) {
+            let spans: Vec<Span> = chunk
+                .iter()
+                .map(|&x| Span::styled("██", Style::default().fg(Color::Rgb(x, x, x))))
+                .collect();
+            colors.push(Line::from(spans))
+        }
+
+        // Paragraph::new(self.hexdump)
+        //     .centered()
+        //     .block(b1)
+        //     .render(l, buf);
+        Paragraph::new(colors)
             .centered()
             .block(b2)
             .render(r, buf);       
@@ -94,9 +74,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let bytes = fs::read(&args[1])?;
-    let hxd = hexdump(&bytes);
-    let hxv = hexview(&bytes);
-    let mut hx = Hexust {hexdump: hxd, hexview: hxv};
+    let mut hx = Hexust {bytes: bytes};
 
     let mut terminal = Terminal::with_options(
         CrosstermBackend::new(io::stdout()),
