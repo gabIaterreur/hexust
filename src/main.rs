@@ -1,8 +1,8 @@
+use std::env;
+use std::error::Error;
+use std::fmt::Write;
 use std::fs;
 use std::io;
-use std::env;
-use std::fmt::Write;
-use std::error::Error;
 
 use ratatui::{
     DefaultTerminal, Frame,
@@ -13,7 +13,6 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend};
-
 
 #[derive(Debug, Default)]
 pub struct Hexust {
@@ -38,10 +37,8 @@ impl Widget for &Hexust {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .areas(area);
 
-        let b1 = Block::bordered()
-            .title(" Hexdump ");
-        let b2 = Block::bordered()
-            .title(" Hexview ");
+        let b1 = Block::bordered().title(" Hexdump ");
+        let b2 = Block::bordered().title(" Hexview ");
 
         let mut colors: Vec<Line> = Vec::new();
         for chunk in self.bytes.chunks(16) {
@@ -73,14 +70,8 @@ impl Widget for &Hexust {
             lines.push(Line::from(out));
         }
 
-        Paragraph::new(lines)
-            .centered()
-            .block(b1)
-            .render(l, buf);
-        Paragraph::new(colors)
-            .centered()
-            .block(b2)
-            .render(r, buf);       
+        Paragraph::new(lines).centered().block(b1).render(l, buf);
+        Paragraph::new(colors).centered().block(b2).render(r, buf);
     }
 }
 
@@ -88,15 +79,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        return Err(Box::from("Missing filepath argument\n Usage: ./hexust /path/to/file"));
+        return Err(Box::from(
+            "Missing filepath argument\n Usage: ./hexust /path/to/file",
+        ));
     }
 
     let bytes = fs::read(&args[1])?;
-    let hx = Hexust {bytes: bytes};
+    let max_len = bytes.chunks(16).count();
+    let hx = Hexust { bytes: bytes };
 
     let mut terminal = Terminal::with_options(
         CrosstermBackend::new(io::stdout()),
-        TerminalOptions { viewport: Viewport::Inline(10) },
+        TerminalOptions {
+            viewport: Viewport::Inline(max_len as u16),
+        },
     )?;
     terminal.draw(|f| f.render_widget(&hx, f.area()))?;
 
