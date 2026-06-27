@@ -4,15 +4,13 @@ use std::env;
 use std::fmt::Write;
 use std::error::Error;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
-    layout::{Alignment, Constraint, Direction, Layout, Position, Rect},
-    style::{Color, Style, Stylize},
-    symbols::border,
-    text::{Line, Text, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    text::{Line, Span},
+    widgets::{Block, Paragraph, Widget},
 };
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend};
 
@@ -45,7 +43,6 @@ impl Widget for &Hexust {
         let b2 = Block::bordered()
             .title(" Hexview ");
 
-
         let mut colors: Vec<Line> = Vec::new();
         for chunk in self.bytes.chunks(16) {
             let spans: Vec<Span> = chunk
@@ -55,10 +52,31 @@ impl Widget for &Hexust {
             colors.push(Line::from(spans))
         }
 
-        // Paragraph::new(self.hexdump)
-        //     .centered()
-        //     .block(b1)
-        //     .render(l, buf);
+        let mut lines: Vec<Line> = Vec::new();
+        for (index, chunk) in self.bytes.chunks(16).enumerate() {
+            let mut out = String::new();
+            let offset = (index * 16) as u64;
+
+            let _ = write!(out, "{:08x} ", offset);
+            for b in chunk {
+                let _ = write!(out, "{:02x} ", b);
+            }
+            for b in chunk {
+                let c = if b.is_ascii_graphic() || *b == b' ' {
+                    *b as char
+                } else {
+                    '.'
+                };
+                let _ = write!(out, "{}", c);
+            }
+            out.push('\n');
+            lines.push(Line::from(out));
+        }
+
+        Paragraph::new(lines)
+            .centered()
+            .block(b1)
+            .render(l, buf);
         Paragraph::new(colors)
             .centered()
             .block(b2)
@@ -74,7 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let bytes = fs::read(&args[1])?;
-    let mut hx = Hexust {bytes: bytes};
+    let hx = Hexust {bytes: bytes};
 
     let mut terminal = Terminal::with_options(
         CrosstermBackend::new(io::stdout()),
