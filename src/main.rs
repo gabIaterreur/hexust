@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::env;
+use std::fmt::Write;
 use std::error::Error;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -18,7 +19,27 @@ use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend};
 
 
 pub fn hexdump(bytes: &Vec<u8>) -> String {
-    return String::from("Pane 1")
+    let mut out = String::new();
+    for (index, chunk) in bytes.chunks(16).enumerate() {
+        let offset = (index * 16) as u64;
+
+        write!(out, "{:08x} ", offset).unwrap();
+        for b in chunk {
+            write!(out, "{:02x} ", b).unwrap();
+        }
+
+        for b in chunk {
+            let c = if b.is_ascii_graphic() || *b == b' ' {
+                *b as char
+            } else {
+                '.'
+            };
+            write!(out, "{}", c).unwrap();
+        }
+
+        out.push('\n');
+    }
+    out
 }
 
 pub fn hexview(bytes: &Vec<u8>) -> String {
