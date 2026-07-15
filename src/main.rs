@@ -19,6 +19,29 @@ pub struct Hexust {
     bytes: Vec<u8>,
 }
 
+pub fn to_dumbass_colors(gray: u8) -> (u8, u8, u8) {
+    let hue = (gray as f32);
+    let (mut r, mut g, mut b) = (0.0, 0.0, 0.0);
+
+    if hue < 85.0 {
+        r = 0.0;
+        g = hue * 3.0;
+        b = 255.0 - hue * 3.0;
+    } else if hue < 170.0 {
+        let hue = hue - 85.0;
+        r = hue * 3.0;
+        g = 255.0 - hue * 3.0;
+        b = 0.0;
+    } else {
+        let hue = hue - 170.0;
+        r = 255.0 - hue * 3.0;
+        g = 0.0;
+        b = hue * 3.0;
+    }
+
+    return (r as u8, g as u8, b as u8);
+}
+
 impl Hexust {
     pub fn run(&self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         terminal.draw(|frame| self.draw(frame))?;
@@ -44,7 +67,10 @@ impl Widget for &Hexust {
         for chunk in self.bytes.chunks(32) {
             let spans: Vec<Span> = chunk
                 .iter()
-                .map(|&x| Span::styled("██", Style::default().fg(Color::Rgb(x, x, x))))
+                .map(|&x| {
+                    let (r, g, b) = to_dumbass_colors(x);
+                    Span::styled("██", Style::default().fg(Color::Rgb(r, g, b)))
+                })
                 .collect();
             colors.push(Line::from(spans))
         }
