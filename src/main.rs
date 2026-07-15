@@ -41,7 +41,7 @@ impl Widget for &Hexust {
         let b2 = Block::bordered().title(" Hexview ");
 
         let mut colors: Vec<Line> = Vec::new();
-        for chunk in self.bytes.chunks(16) {
+        for chunk in self.bytes.chunks(32) {
             let spans: Vec<Span> = chunk
                 .iter()
                 .map(|&x| Span::styled("██", Style::default().fg(Color::Rgb(x, x, x))))
