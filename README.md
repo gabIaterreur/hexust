@@ -1,3 +1,3 @@
 ## TODO:
 
-- [ ] Fix output formatting + display length
+- [ ] Dynamic length display
